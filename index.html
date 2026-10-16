@@ -249,11 +249,18 @@
             border-radius: 20px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
             margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            max-width: 100%;
+            overflow: hidden;
         }
 
         #qrcode canvas, #qrcode img {
             display: block;
             border-radius: 10px;
+            max-width: 100% !important;
+            height: auto !important;
         }
 
         .qrcode-actions {
@@ -320,7 +327,6 @@
                     <span class="setting-label">Kích thước (px):</span>
                     <input type="number" id="qr-size" value="180" min="50" max="500" step="10">
                 </div>
-                <!-- Ô chỉnh tên file khi tải -->
                 <div class="setting-item" style="grid-column: span 2; margin-top: 8px;">
                     <span class="setting-label">Tên file tải:</span>
                     <input type="text" id="file-name-input" class="setting-input-text" value="ma-qr-cua-toi">
@@ -379,7 +385,7 @@
             var inputText = document.getElementById("qr-input").value;
             var colorDark = document.getElementById("qr-color-dark").value;
             var colorLight = document.getElementById("qr-color-light").value;
-            var size = document.getElementById("qr-size").value;
+            var size = parseInt(document.getElementById("qr-size").value) || 180;
             
             var qrContainer = document.getElementById("qrcode");
             var qrBox = document.getElementById("qrcode-box");
@@ -394,20 +400,31 @@
             qrBox.classList.remove("active");
             qrActions.classList.add("hidden");
 
-            qrcode = new QRCode(qrContainer, {
-                text: inputText,
-                width: parseInt(size),
-                height: parseInt(size),
-                colorDark : colorDark,
-                colorLight : colorLight,
-                correctLevel : QRCode.CorrectLevel.H
-            });
-            
-            setTimeout(() => {
-                qrBox.classList.add("active");
-                qrActions.classList.remove("hidden");
-                showStatus("Đã tạo mã QR thành công!", "success");
-            }, 100); 
+            try {
+                // Tự động chọn mức sửa lỗi linh hoạt hơn để hỗ trợ văn bản dài / nhiều dòng
+                let correctLevel = QRCode.CorrectLevel.M;
+                if (inputText.length < 100) {
+                    correctLevel = QRCode.CorrectLevel.H;
+                }
+
+                qrcode = new QRCode(qrContainer, {
+                    text: inputText,
+                    width: size,
+                    height: size,
+                    colorDark: colorDark,
+                    colorLight: colorLight,
+                    correctLevel: correctLevel
+                });
+                
+                setTimeout(() => {
+                    qrBox.classList.add("active");
+                    qrActions.classList.remove("hidden");
+                    showStatus("Đã tạo mã QR thành công!", "success");
+                }, 100); 
+            } catch (error) {
+                console.error(error);
+                showStatus("Nội dung quá dài, vui lòng rút gọn hoặc giảm kích thước!", "error");
+            }
         }
 
         function copyLink() {
@@ -419,7 +436,6 @@
         }
 
         function downloadQR() {
-            // Lấy tên file do người dùng tự nhập
             let customName = document.getElementById("file-name-input").value.trim();
             if (!customName) {
                 customName = "ma-qr-cua-toi";
@@ -428,7 +444,6 @@
                 customName += ".png";
             }
 
-            // Hỗ trợ lấy dữ liệu từ cả canvas lẫn img do qrcode.js tạo ra
             const canvas = document.querySelector("#qrcode canvas");
             const img = document.querySelector("#qrcode img");
 
