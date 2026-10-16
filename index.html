@@ -251,7 +251,7 @@
             margin-bottom: 20px;
         }
 
-        #qrcode img {
+        #qrcode canvas, #qrcode img {
             display: block;
             border-radius: 10px;
         }
@@ -419,10 +419,7 @@
         }
 
         function downloadQR() {
-            const qrImage = document.querySelector("#qrcode img");
-            if (!qrImage) return;
-
-            // Lấy tên file do người dùng tự nhập, mặc định là "ma-qr-cua-toi" nếu để trống
+            // Lấy tên file do người dùng tự nhập
             let customName = document.getElementById("file-name-input").value.trim();
             if (!customName) {
                 customName = "ma-qr-cua-toi";
@@ -431,27 +428,30 @@
                 customName += ".png";
             }
 
-            fetch(qrImage.src)
-                .then(res => res.blob())
-                .then(blob => {
-                    const pngBlob = new Blob([blob], { type: "image/png" });
-                    const blobUrl = URL.createObjectURL(pngBlob);
-                    const link = document.createElement("a");
-                    link.href = blobUrl;
-                    link.download = customName;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-                    showStatus(`Đã tải file: ${customName}`, "success");
-                })
-                .catch(err => {
-                    const link = document.createElement("a");
-                    link.href = qrImage.src;
-                    link.download = customName;
-                    link.click();
-                    showStatus(`Đã tải file: ${customName}`, "success");
-                });
+            // Hỗ trợ lấy dữ liệu từ cả canvas lẫn img do qrcode.js tạo ra
+            const canvas = document.querySelector("#qrcode canvas");
+            const img = document.querySelector("#qrcode img");
+
+            let imageUrl = "";
+            if (canvas) {
+                imageUrl = canvas.toDataURL("image/png");
+            } else if (img) {
+                imageUrl = img.src;
+            }
+
+            if (!imageUrl) {
+                showStatus("Chưa có mã QR để tải xuống!", "error");
+                return;
+            }
+
+            const link = document.createElement("a");
+            link.href = imageUrl;
+            link.download = customName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showStatus(`Đã tải file: ${customName}`, "success");
         }
 
         window.addEventListener('DOMContentLoaded', () => {
