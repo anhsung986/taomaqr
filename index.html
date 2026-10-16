@@ -158,6 +158,21 @@
             outline: none;
         }
 
+        .setting-input-text {
+            width: 140px;
+            padding: 5px 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            background: rgba(15, 23, 42, 0.6);
+            color: #f8fafc;
+            font-size: 13px;
+            outline: none;
+        }
+
+        .setting-input-text:focus {
+            border-color: #a78bfa;
+        }
+
         .btn-generate {
             width: 100%;
             padding: 14px;
@@ -233,19 +248,12 @@
             background: #ffffff;
             border-radius: 20px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-            margin-bottom: 12px;
+            margin-bottom: 20px;
         }
 
         #qrcode img {
             display: block;
             border-radius: 10px;
-        }
-
-        .save-hint {
-            font-size: 12px;
-            color: #94a3b8;
-            margin-bottom: 16px;
-            text-align: center;
         }
 
         .qrcode-actions {
@@ -269,7 +277,7 @@
             gap: 6px;
         }
         
-        .btn-open {
+        .btn-download {
             background: linear-gradient(135deg, #10b981, #0d9488);
             color: #ffffff;
         }
@@ -312,6 +320,11 @@
                     <span class="setting-label">Kích thước (px):</span>
                     <input type="number" id="qr-size" value="180" min="50" max="500" step="10">
                 </div>
+                <!-- Ô chỉnh tên file khi tải -->
+                <div class="setting-item" style="grid-column: span 2; margin-top: 8px;">
+                    <span class="setting-label">Tên file tải:</span>
+                    <input type="text" id="file-name-input" class="setting-input-text" value="ma-qr-cua-toi">
+                </div>
             </div>
         </div>
 
@@ -327,14 +340,13 @@
         
         <div id="qrcode-box" class="qrcode-box">
             <div id="qrcode"></div>
-            <p class="save-hint"><i class="fa-solid fa-circle-info"></i> Nhấn giữ vào ảnh mã QR để lưu về máy</p>
             
             <div id="qrcode-actions" class="qrcode-actions hidden">
                 <button class="btn-action btn-copy-link" onclick="copyLink()">
                     <i class="fa-regular fa-copy"></i> Sao chép text
                 </button>
-                <button class="btn-action btn-open" onclick="openQRImage()">
-                    <i class="fa-solid fa-expand"></i> Mở ảnh lớn
+                <button class="btn-action btn-download" onclick="downloadQR()">
+                    <i class="fa-solid fa-download"></i> Tải ảnh (PNG)
                 </button>
             </div>
         </div>
@@ -406,12 +418,40 @@
             });
         }
 
-        function openQRImage() {
+        function downloadQR() {
             const qrImage = document.querySelector("#qrcode img");
             if (!qrImage) return;
-            // Mở ảnh ra tab mới để người dùng nhấn giữ lưu cực kỳ dễ dàng không bị lỗi pop-up
-            const newWindow = window.open();
-            newWindow.document.write(`<body style="background:#0f172a;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;color:#fff;font-family:sans-serif;"><img src="${qrImage.src}" style="border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,0.5);max-width:90%;"/><p style="margin-top:20px;font-size:14px;color:#94a3b8;">Nhấn giữ vào ảnh để lưu về máy</p></body>`);
+
+            // Lấy tên file do người dùng tự nhập, mặc định là "ma-qr-cua-toi" nếu để trống
+            let customName = document.getElementById("file-name-input").value.trim();
+            if (!customName) {
+                customName = "ma-qr-cua-toi";
+            }
+            if (!customName.endsWith(".png")) {
+                customName += ".png";
+            }
+
+            fetch(qrImage.src)
+                .then(res => res.blob())
+                .then(blob => {
+                    const pngBlob = new Blob([blob], { type: "image/png" });
+                    const blobUrl = URL.createObjectURL(pngBlob);
+                    const link = document.createElement("a");
+                    link.href = blobUrl;
+                    link.download = customName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+                    showStatus(`Đã tải file: ${customName}`, "success");
+                })
+                .catch(err => {
+                    const link = document.createElement("a");
+                    link.href = qrImage.src;
+                    link.download = customName;
+                    link.click();
+                    showStatus(`Đã tải file: ${customName}`, "success");
+                });
         }
 
         window.addEventListener('DOMContentLoaded', () => {
