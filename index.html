@@ -146,17 +146,6 @@
             background: none;
             outline: none;
         }
-        
-        input[type="number"] {
-            width: 60px;
-            padding: 4px 8px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 6px;
-            background: rgba(15, 23, 42, 0.6);
-            color: #f8fafc;
-            font-size: 13px;
-            outline: none;
-        }
 
         .setting-input-text {
             width: 140px;
@@ -323,11 +312,8 @@
                     <span class="setting-label">Màu nền:</span>
                     <input type="color" id="qr-color-light" value="#ffffff">
                 </div>
+                <!-- Ô chỉnh tên file tải (chiếm trọn hàng ngang) -->
                 <div class="setting-item" style="grid-column: span 2;">
-                    <span class="setting-label">Kích thước (px):</span>
-                    <input type="number" id="qr-size" value="180" min="50" max="500" step="10">
-                </div>
-                <div class="setting-item" style="grid-column: span 2; margin-top: 8px;">
                     <span class="setting-label">Tên file tải:</span>
                     <input type="text" id="file-name-input" class="setting-input-text" value="ma-qr-cua-toi">
                 </div>
@@ -385,7 +371,9 @@
             var inputText = document.getElementById("qr-input").value;
             var colorDark = document.getElementById("qr-color-dark").value;
             var colorLight = document.getElementById("qr-color-light").value;
-            var size = parseInt(document.getElementById("qr-size").value) || 180;
+            
+            // Cố định kích thước gốc tối ưu (256px), CSS sẽ tự động co giãn responsive đẹp mắt
+            var autoSize = 256;
             
             var qrContainer = document.getElementById("qrcode");
             var qrBox = document.getElementById("qrcode-box");
@@ -401,7 +389,7 @@
             qrActions.classList.add("hidden");
 
             try {
-                // Tự động chọn mức sửa lỗi linh hoạt hơn để hỗ trợ văn bản dài / nhiều dòng
+                // Tự động chọn mức sửa lỗi linh hoạt hỗ trợ văn bản dài / nhiều dòng
                 let correctLevel = QRCode.CorrectLevel.M;
                 if (inputText.length < 100) {
                     correctLevel = QRCode.CorrectLevel.H;
@@ -409,8 +397,8 @@
 
                 qrcode = new QRCode(qrContainer, {
                     text: inputText,
-                    width: size,
-                    height: size,
+                    width: autoSize,
+                    height: autoSize,
                     colorDark: colorDark,
                     colorLight: colorLight,
                     correctLevel: correctLevel
@@ -423,7 +411,7 @@
                 }, 100); 
             } catch (error) {
                 console.error(error);
-                showStatus("Nội dung quá dài, vui lòng rút gọn hoặc giảm kích thước!", "error");
+                showStatus("Nội dung quá dài, vui lòng rút gọn lại!", "error");
             }
         }
 
