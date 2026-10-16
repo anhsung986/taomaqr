@@ -298,7 +298,8 @@
         </div>
 
         <div class="input-group">
-            <textarea id="qr-input" placeholder="Nhập văn bản, đường link hoặc nội dung bất kỳ... Bạn có thể nhấn Enter để xuống dòng.">https://google.com</textarea>
+            <textarea id="qr-input" placeholder="Nhập văn bản, đường link hoặc nội dung bất kỳ... Bạn có thể nhấn Enter để xuống dòng.">Họ tên Sùng Thị Thu
+Năm sinh 29/1/2012</textarea>
         </div>
 
         <div class="advanced-settings">
@@ -312,7 +313,6 @@
                     <span class="setting-label">Màu nền:</span>
                     <input type="color" id="qr-color-light" value="#ffffff">
                 </div>
-                <!-- Ô chỉnh tên file tải (chiếm trọn hàng ngang) -->
                 <div class="setting-item" style="grid-column: span 2;">
                     <span class="setting-label">Tên file tải:</span>
                     <input type="text" id="file-name-input" class="setting-input-text" value="ma-qr-cua-toi">
@@ -371,8 +371,6 @@
             var inputText = document.getElementById("qr-input").value;
             var colorDark = document.getElementById("qr-color-dark").value;
             var colorLight = document.getElementById("qr-color-light").value;
-            
-            // Cố định kích thước gốc tối ưu (256px), CSS sẽ tự động co giãn responsive đẹp mắt
             var autoSize = 256;
             
             var qrContainer = document.getElementById("qrcode");
@@ -388,30 +386,35 @@
             qrBox.classList.remove("active");
             qrActions.classList.add("hidden");
 
-            try {
-                // Tự động chọn mức sửa lỗi linh hoạt hỗ trợ văn bản dài / nhiều dòng
-                let correctLevel = QRCode.CorrectLevel.M;
-                if (inputText.length < 100) {
-                    correctLevel = QRCode.CorrectLevel.H;
-                }
+            // Tự động thử các mức sửa lỗi từ M xuống L để thích ứng hoàn hảo với tiếng Việt có dấu
+            const levels = [QRCode.CorrectLevel.M, QRCode.CorrectLevel.L, QRCode.CorrectLevel.Q, QRCode.CorrectLevel.H];
+            let success = false;
 
-                qrcode = new QRCode(qrContainer, {
-                    text: inputText,
-                    width: autoSize,
-                    height: autoSize,
-                    colorDark: colorDark,
-                    colorLight: colorLight,
-                    correctLevel: correctLevel
-                });
-                
+            for (let level of levels) {
+                try {
+                    qrcode = new QRCode(qrContainer, {
+                        text: inputText,
+                        width: autoSize,
+                        height: autoSize,
+                        colorDark: colorDark,
+                        colorLight: colorLight,
+                        correctLevel: level
+                    });
+                    success = true;
+                    break;
+                } catch (e) {
+                    console.warn("Thử mức sửa lỗi thất bại, đang chuyển cấp...", e);
+                }
+            }
+            
+            if (success) {
                 setTimeout(() => {
                     qrBox.classList.add("active");
                     qrActions.classList.remove("hidden");
                     showStatus("Đã tạo mã QR thành công!", "success");
                 }, 100); 
-            } catch (error) {
-                console.error(error);
-                showStatus("Nội dung quá dài, vui lòng rút gọn lại!", "error");
+            } else {
+                showStatus("Nội dung quá dài hoặc chứa ký tự không hỗ trợ!", "error");
             }
         }
 
